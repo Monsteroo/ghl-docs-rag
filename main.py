@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 from generate import answer as generate_answer
 from retrieval import retrieve
+from translate import translate_to_english
 
 app = FastAPI(title="GHL Docs RAG API")
 
@@ -49,7 +50,11 @@ class AskResponse(BaseModel):
 def ask(request: AskRequest, http_request: Request) -> AskResponse:
     _enforce_rate_limit(http_request.client.host)
     try:
-        retrieved = retrieve(request.question)
+        # Retrieval runs on the English translation (corpus + BM25 are
+        # English-only); generation still sees the user's original
+        # phrasing so the answer can naturally match their language.
+        english_query = translate_to_english(request.question)
+        retrieved = retrieve(english_query)
         result = generate_answer(request.question, retrieved)
     except HTTPException:
         raise
