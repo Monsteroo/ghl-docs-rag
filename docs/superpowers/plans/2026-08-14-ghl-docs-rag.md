@@ -31,6 +31,7 @@ GHL Docs RAG/
 ├── Dockerfile
 ├── docker-compose.yml
 ├── scraper/
+│   ├── common.py                # write_chunk() — shared by both scrapers below
 │   ├── api_scraper.py          # pulls apps/*.json from GitHub, writes corpus/api/*.md
 │   └── articles_scraper.py     # crawls the Developer Resources folder, writes corpus/articles/*.md
 ├── corpus/
@@ -160,12 +161,29 @@ Expected: FAIL with `ModuleNotFoundError: No module named 'scraper'`
 
 Create `scraper/__init__.py` (empty file).
 
-Create `scraper/api_scraper.py`:
+Create `scraper/common.py` — shared by both this scraper and Task 2's, since both write the same 3-line-header-plus-body chunk-file format and only differ in the `doc_type` value:
 
 ```python
 import os
 
+
+def write_chunk(chunk: dict, doc_type: str, output_dir: str) -> None:
+    os.makedirs(output_dir, exist_ok=True)
+    path = os.path.join(output_dir, f"{chunk['doc_id']}.md")
+    with open(path, "w") as f:
+        f.write(f"title: {chunk['title']}\n")
+        f.write(f"doc_type: {doc_type}\n")
+        f.write(f"source_url: {chunk['source_url']}\n")
+        f.write("\n")
+        f.write(chunk["content"])
+```
+
+Create `scraper/api_scraper.py`:
+
+```python
 import requests
+
+from scraper.common import write_chunk
 
 GITHUB_API_URL = "https://api.github.com/repos/GoHighLevel/highlevel-api-docs/contents/apps"
 
@@ -213,17 +231,6 @@ def fetch_api_spec_files() -> list[dict]:
     ]
 
 
-def write_chunk(chunk: dict, output_dir: str) -> None:
-    os.makedirs(output_dir, exist_ok=True)
-    path = os.path.join(output_dir, f"{chunk['doc_id']}.md")
-    with open(path, "w") as f:
-        f.write(f"title: {chunk['title']}\n")
-        f.write("doc_type: api\n")
-        f.write(f"source_url: {chunk['source_url']}\n")
-        f.write("\n")
-        f.write(chunk["content"])
-
-
 def scrape_api_docs(output_dir: str = "corpus/api") -> int:
     count = 0
     for file_info in fetch_api_spec_files():
@@ -231,7 +238,7 @@ def scrape_api_docs(output_dir: str = "corpus/api") -> int:
         spec_response = requests.get(file_info["download_url"], timeout=30)
         spec_response.raise_for_status()
         for chunk in parse_api_spec(spec_response.json(), module):
-            write_chunk(chunk, output_dir)
+            write_chunk(chunk, doc_type="api", output_dir=output_dir)
             count += 1
     return count
 
@@ -250,7 +257,7 @@ Expected: PASS, 4 passed
 
 ```bash
 cd "GHL Docs RAG"
-git add scraper/__init__.py scraper/api_scraper.py tests/__init__.py tests/test_api_scraper.py
+git add scraper/__init__.py scraper/common.py scraper/api_scraper.py tests/__init__.py tests/test_api_scraper.py
 git commit -m "feat: scraper for GoHighLevel's OpenAPI reference docs"
 ```
 
@@ -323,13 +330,14 @@ Expected: FAIL with `ModuleNotFoundError: No module named 'scraper.articles_scra
 Create `scraper/articles_scraper.py`:
 
 ```python
-import os
 import re
 import time
 from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup
+
+from scraper.common import write_chunk
 
 DEVELOPER_RESOURCES_FOLDER = "https://help.gohighlevel.com/support/solutions/folders/48000668553"
 ARTICLE_ID_PATTERN = re.compile(r"/articles/(\d+)-")
@@ -392,24 +400,13 @@ def list_all_article_urls(folder_url: str = DEVELOPER_RESOURCES_FOLDER) -> list[
     return urls
 
 
-def write_chunk(chunk: dict, output_dir: str) -> None:
-    os.makedirs(output_dir, exist_ok=True)
-    path = os.path.join(output_dir, f"{chunk['doc_id']}.md")
-    with open(path, "w") as f:
-        f.write(f"title: {chunk['title']}\n")
-        f.write("doc_type: article\n")
-        f.write(f"source_url: {chunk['source_url']}\n")
-        f.write("\n")
-        f.write(chunk["content"])
-
-
 def scrape_articles(output_dir: str = "corpus/articles") -> int:
     count = 0
     for url in list_all_article_urls():
         response = requests.get(url, timeout=30)
         response.raise_for_status()
         chunk = parse_article_html(response.text, url)
-        write_chunk(chunk, output_dir)
+        write_chunk(chunk, doc_type="article", output_dir=output_dir)
         count += 1
         time.sleep(0.5)
     return count
@@ -1366,7 +1363,9 @@ No database container — Pinecone is the only data store and it's cloud-hosted,
 - Consumes: `requirements.txt` (Task 4), `main.py` (Task 8).
 - Produces: a running container reachable at `http://localhost:8001` (a different port than the sibling project's `8000`, since both may run on the same machine), supervised so it restarts itself.
 
-- [ ] **Step 1: Write `.gitignore`**
+- [ ] **Step 1: Extend `.gitignore`**
+
+A `.gitignore` already exists in this repo (created when the implementation worktree was set up, containing only `.worktrees/`) — append to it, don't overwrite it:
 
 ```
 .env
