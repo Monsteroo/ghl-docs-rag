@@ -7,7 +7,7 @@ from ingest import embed_dense
 # irrelevant queries. Relevant-vs-irrelevant score separation grew steadily
 # with alpha (gap ~0.08 at 0.3 up to ~0.23 at 0.9), but the short-exact set
 # was not monotonic — some queries (locationId, audienceId) scored *best*
-# at low alpha while others (custom-audience) scored best at high alpha, so
+# at low alpha while others (custom-audience, get-duplicate-contact) scored best at high alpha, so
 # there's no alpha that's optimal for every query shape. 0.6 was the lowest
 # value already past the point of diminishing separation gains on the
 # natural-language set (min relevant ~0.31 vs max irrelevant ~0.11) while

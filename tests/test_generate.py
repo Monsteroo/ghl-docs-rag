@@ -34,3 +34,33 @@ def test_high_confidence_calls_claude_and_extracts_citations():
 def test_empty_retrieval_is_always_a_fallback():
     result = answer("anything", [])
     assert result["confident"] is False
+
+
+def test_hallucinated_citation_is_dropped():
+    high_score_results = [{
+        "doc_id": "api-contacts-get-contact", "doc_type": "api", "title": "Get Contact",
+        "content": "GET /contacts/{id}", "source_url": "u", "score": CONFIDENCE_THRESHOLD + 0.5,
+    }]
+    fake_response = MagicMock()
+    fake_response.content = [MagicMock(
+        text="Send a GET to /contacts/{id}. [doc:api-contacts-get-contact] Also see [doc:made-up-id]."
+    )]
+    with patch("generate.client.messages.create", return_value=fake_response):
+        result = answer("how do I fetch a contact?", high_score_results)
+    assert result["cited_doc_ids"] == ["api-contacts-get-contact"]
+
+
+def test_low_score_excerpts_are_filtered_before_the_prompt():
+    mixed_results = [
+        {"doc_id": "api-a", "doc_type": "api", "title": "A", "content": "content a",
+         "source_url": "u", "score": CONFIDENCE_THRESHOLD + 0.5},
+        {"doc_id": "api-b", "doc_type": "api", "title": "B", "content": "content b",
+         "source_url": "u", "score": CONFIDENCE_THRESHOLD - 0.1},
+    ]
+    fake_response = MagicMock()
+    fake_response.content = [MagicMock(text="Answer. [doc:api-a]")]
+    with patch("generate.client.messages.create", return_value=fake_response) as mock_create:
+        answer("some question", mixed_results)
+    prompt_content = mock_create.call_args.kwargs["messages"][0]["content"]
+    assert "api-a" in prompt_content
+    assert "api-b" not in prompt_content

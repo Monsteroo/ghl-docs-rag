@@ -1,6 +1,8 @@
 from unittest.mock import MagicMock, patch
 
-from retrieval import hybrid_scale, retrieve
+import pytest
+
+from retrieval import ALPHA, hybrid_scale, retrieve
 
 
 def test_hybrid_scale_multiplies_dense_by_alpha_and_sparse_by_one_minus_alpha():
@@ -44,5 +46,6 @@ def test_retrieve_unpacks_pinecone_matches_into_result_dicts():
     assert call_kwargs["namespace"] == "production"
     assert call_kwargs["top_k"] == 1
     assert call_kwargs["include_metadata"] is True
-    assert call_kwargs["vector"] == [0.06, 0.12]  # [0.1, 0.2] * ALPHA(0.6)
-    assert call_kwargs["sparse_vector"] == {"indices": [1], "values": [0.2]}  # values * (1 - ALPHA)
+    assert call_kwargs["vector"] == pytest.approx([0.1 * ALPHA, 0.2 * ALPHA])
+    assert call_kwargs["sparse_vector"]["indices"] == [1]
+    assert call_kwargs["sparse_vector"]["values"] == pytest.approx([0.5 * (1 - ALPHA)])

@@ -3,7 +3,7 @@ import os
 
 
 def parse_chunk_file(path: str) -> dict:
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         raw = f.read()
     header, _, body = raw.partition("\n\n")
     fields = {}

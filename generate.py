@@ -32,8 +32,14 @@ def answer(query: str, retrieved: list[dict]) -> dict:
     if not retrieved or retrieved[0]["score"] < CONFIDENCE_THRESHOLD:
         return {"text": FALLBACK_TEXT, "cited_doc_ids": [], "confident": False}
 
+    # Only excerpts that individually clear the confidence bar go into the
+    # prompt — retrieved[0] always qualifies (checked above), but ranks 2-3
+    # can be low-relevance filler that wastes tokens and gives the model
+    # irrelevant material to (not) cite from.
+    confident_retrieved = [r for r in retrieved if r["score"] >= CONFIDENCE_THRESHOLD]
+
     excerpts = "\n\n".join(
-        f"[doc_id={r['doc_id']}] ({r['doc_type']}) {r['title']}\n{r['content']}" for r in retrieved
+        f"[doc_id={r['doc_id']}] ({r['doc_type']}) {r['title']}\n{r['content']}" for r in confident_retrieved
     )
     response = client.messages.create(
         model=MODEL,
@@ -42,7 +48,11 @@ def answer(query: str, retrieved: list[dict]) -> dict:
         messages=[{"role": "user", "content": f"Excerpts:\n\n{excerpts}\n\nQuestion: {query}"}],
     )
     raw_text = response.content[0].text
-    cited_doc_ids = sorted({m for m in CITATION_PATTERN.findall(raw_text)})
+    # Intersected against what was actually retrieved — a citation marker
+    # the model invents for a doc_id that was never in the excerpts must
+    # never reach the public modal as a fabricated source.
+    valid_doc_ids = {r["doc_id"] for r in confident_retrieved}
+    cited_doc_ids = sorted(valid_doc_ids.intersection(CITATION_PATTERN.findall(raw_text)))
     display_text = CITATION_PATTERN.sub("", raw_text).strip()
     display_text = re.sub(r"\s{2,}", " ", display_text)
 

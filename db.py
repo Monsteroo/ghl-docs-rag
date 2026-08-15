@@ -7,12 +7,22 @@ INDEX_NAME = "ghl-docs-rag"
 EMBEDDING_DIM = 1536  # text-embedding-3-small
 BM25_PARAMS_PATH = "bm25_params.json"
 
+_index = None
+_bm25_encoder = None
+
 
 def get_index():
     """Connects to (creating if needed) the serverless, dotproduct-metric
     index that hybrid (dense+sparse) search requires. cosine-metric indexes
     reject sparse_values on upsert/query — dotproduct is not optional here.
+
+    Cached at module scope: the FastAPI process is long-running and the
+    index handle never changes mid-process, so re-resolving it (a Pinecone
+    control-plane call) on every /ask request is pure wasted latency.
     """
+    global _index
+    if _index is not None:
+        return _index
     pc = Pinecone(api_key=os.environ["PINECONE_API_KEY"])
     if INDEX_NAME not in [idx["name"] for idx in pc.list_indexes()]:
         pc.create_index(
@@ -21,7 +31,8 @@ def get_index():
             metric="dotproduct",
             spec=ServerlessSpec(cloud="aws", region="us-east-1"),
         )
-    return pc.Index(INDEX_NAME)
+    _index = pc.Index(INDEX_NAME)
+    return _index
 
 
 def get_or_fit_bm25(corpus_texts: list[str] | None = None) -> BM25Encoder:
@@ -31,9 +42,17 @@ def get_or_fit_bm25(corpus_texts: list[str] | None = None) -> BM25Encoder:
     time, or sparse vector indices from a query won't line up with what
     was stored — that's why this state is persisted to BM25_PARAMS_PATH
     instead of re-fit on every process start.
+
+    Also cached in-memory after first load/fit per process, so a long-running
+    FastAPI worker doesn't re-read and re-parse the params file on every
+    /ask request.
     """
+    global _bm25_encoder
+    if _bm25_encoder is not None:
+        return _bm25_encoder
     if os.path.exists(BM25_PARAMS_PATH):
-        return BM25Encoder().load(BM25_PARAMS_PATH)
+        _bm25_encoder = BM25Encoder().load(BM25_PARAMS_PATH)
+        return _bm25_encoder
     if not corpus_texts:
         raise RuntimeError(
             f"{BM25_PARAMS_PATH} not found and no corpus_texts given to fit a new one — "
@@ -42,7 +61,8 @@ def get_or_fit_bm25(corpus_texts: list[str] | None = None) -> BM25Encoder:
     encoder = BM25Encoder()
     encoder.fit(corpus_texts)
     encoder.dump(BM25_PARAMS_PATH)
-    return encoder
+    _bm25_encoder = encoder
+    return _bm25_encoder
 
 
 def upsert_chunks(index, namespace: str, records: list[dict]) -> None:
