@@ -3,7 +3,10 @@ from unittest.mock import MagicMock, patch
 from db import upsert_chunks
 
 
-def test_upsert_chunks_batches_and_shapes_the_payload():
+def test_upsert_chunks_shapes_the_payload():
+    # Batching itself is the caller's job (ingest.py slices records into
+    # BATCH_SIZE chunks and calls this once per slice) — this function
+    # always issues exactly one upsert for whatever it's given.
     fake_index = MagicMock()
     records = [
         {
