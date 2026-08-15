@@ -9,11 +9,11 @@
         <string>/usr/local/bin/docker</string>
         <string>compose</string>
         <string>-f</string>
-        <string>/Users/user/Documents/Projects/GHL Docs RAG/.worktrees/ghl-docs-rag-impl/docker-compose.yml</string>
+        <string>/Users/user/Documents/Projects/GHL Docs RAG/docker-compose.yml</string>
         <string>up</string>
     </array>
     <key>WorkingDirectory</key>
-    <string>/Users/user/Documents/Projects/GHL Docs RAG/.worktrees/ghl-docs-rag-impl</string>
+    <string>/Users/user/Documents/Projects/GHL Docs RAG</string>
     <key>KeepAlive</key>
     <true/>
     <key>RunAtLoad</key>
