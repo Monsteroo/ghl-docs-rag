@@ -7,12 +7,13 @@ client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", "sk-ant-placehold
 
 MODEL = "claude-sonnet-5"
 
-# PROVISIONAL — Pinecone's dotproduct hybrid score is unbounded, not a
-# 0-1 similarity, so this number is a placeholder until Task 12 observes
-# real scores on the real ingested corpus and picks one from that data,
-# the same empirical method used to calibrate the sibling project's
-# threshold (never copy a threshold across a different scoring scale).
-CONFIDENCE_THRESHOLD = 1.0
+# Calibrated against the real 599-chunk production corpus (Task 12), at
+# ALPHA=0.6 (see retrieval.py): 12 relevant queries (natural-language and
+# short/exact-term) scored 0.31-0.70 top-1; 4 clearly irrelevant queries
+# ("what's the weather today", etc.) scored 0.06-0.11 top-1. 0.20 sits in
+# the observed gap, biased toward the irrelevant side so a weak-signal
+# real question doesn't get gated out as a false negative.
+CONFIDENCE_THRESHOLD = 0.20
 
 FALLBACK_TEXT = (
     "I don't have a confident answer for that based on GoHighLevel's docs — "

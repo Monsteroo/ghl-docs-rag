@@ -1,13 +1,18 @@
 from db import get_index, get_or_fit_bm25
 from ingest import embed_dense
 
-# 0.5 = equal weight between semantic (dense) and lexical (sparse) signal.
-# Provisional — recalibrated in Task 12 once real query behavior on the
-# real corpus can be observed. Natural-language questions tend to want
-# more dense weight; short/exact queries (an endpoint name, a parameter
-# name) tend to want more sparse weight — same tension that motivated
-# hybrid retrieval in the sibling project in the first place.
-ALPHA = 0.5
+# Calibrated against the real 599-chunk production corpus (Task 12): swept
+# alpha in [0.3, 0.9] against 8 natural-language/mixed queries and 4
+# short/exact-term queries (operation IDs, parameter names) plus 4 clearly
+# irrelevant queries. Relevant-vs-irrelevant score separation grew steadily
+# with alpha (gap ~0.08 at 0.3 up to ~0.23 at 0.9), but the short-exact set
+# was not monotonic — some queries (locationId, audienceId) scored *best*
+# at low alpha while others (custom-audience) scored best at high alpha, so
+# there's no alpha that's optimal for every query shape. 0.6 was the lowest
+# value already past the point of diminishing separation gains on the
+# natural-language set (min relevant ~0.31 vs max irrelevant ~0.11) while
+# keeping meaningful sparse weight (40%) for the exact-term queries.
+ALPHA = 0.6
 
 
 def hybrid_scale(dense: list[float], sparse: dict, alpha: float) -> tuple[list[float], dict]:
