@@ -30,7 +30,15 @@ def hybrid_scale(dense: list[float], sparse: dict, alpha: float) -> tuple[list[f
     return hdense, hsparse
 
 
-def retrieve(query: str, top_k: int = 3, namespace: str = "production") -> list[dict]:
+def retrieve(query: str, top_k: int = 5, namespace: str = "production") -> list[dict]:
+    """top_k defaults to 5, not 3: live testing found a keyword collision
+    where "rate limits" (an API concept) scored lower than several
+    "Shipping Rate" endpoint docs that share the token "rate" — the correct
+    doc ("HighLevel API Documentation") ranked #5, not in the old top-3.
+    A wider candidate window lets generate.py's confidence-threshold filter
+    and Claude's own reading of the excerpts do the disambiguation that
+    pure vector/BM25 ranking got wrong.
+    """
     [dense] = embed_dense([query])
     bm25 = get_or_fit_bm25()
     sparse = bm25.encode_queries(query)

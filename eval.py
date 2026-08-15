@@ -8,7 +8,7 @@ def score_retrieval(questions: list[dict], retrieve_fn: Callable) -> dict:
     correct = 0
     misses = []
     for q in questions:
-        results = retrieve_fn(q["question"], top_k=3)
+        results = retrieve_fn(q["question"], top_k=5)
         titles = [r["title"] for r in results]
         if any(q["expected_title_contains"] in t for t in titles):
             correct += 1
