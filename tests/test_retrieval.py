@@ -44,3 +44,5 @@ def test_retrieve_unpacks_pinecone_matches_into_result_dicts():
     assert call_kwargs["namespace"] == "production"
     assert call_kwargs["top_k"] == 1
     assert call_kwargs["include_metadata"] is True
+    assert call_kwargs["vector"] == [0.05, 0.1]  # [0.1, 0.2] * ALPHA(0.5)
+    assert call_kwargs["sparse_vector"] == {"indices": [1], "values": [0.25]}  # values * (1 - ALPHA)
