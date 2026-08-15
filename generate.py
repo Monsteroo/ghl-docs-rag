@@ -47,7 +47,12 @@ def answer(query: str, retrieved: list[dict]) -> dict:
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": f"Excerpts:\n\n{excerpts}\n\nQuestion: {query}"}],
     )
-    raw_text = response.content[0].text
+    # claude-sonnet-5 can prepend a "thinking" content block ahead of the
+    # actual answer — response.content[0] is not reliably the text block,
+    # so find it by type instead of assuming position.
+    raw_text = next((block.text for block in response.content if block.type == "text"), None)
+    if raw_text is None:
+        raise RuntimeError("Claude response contained no text content block")
     # Intersected against what was actually retrieved — a citation marker
     # the model invents for a doc_id that was never in the excerpts must
     # never reach the public modal as a fabricated source.
