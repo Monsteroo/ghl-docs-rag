@@ -22,10 +22,17 @@ FALLBACK_TEXT = (
 
 CITATION_PATTERN = re.compile(r"\[doc:([\w-]+)\]")
 
-SYSTEM_PROMPT = """You answer questions about GoHighLevel's API and help-center documentation, using ONLY the
-excerpts provided below. Every factual claim must end with a citation marker in the exact form
-[doc:ID] using the doc_id given for that excerpt. If the excerpts don't actually contain the
-answer, say so plainly instead of guessing. Keep answers to 2-3 sentences."""
+SYSTEM_PROMPT = """You answer questions about GoHighLevel's API and help-center documentation for a general
+audience, not just developers, using ONLY the excerpts provided below. Start with a plain-language
+answer to what the person actually wants to know — then, if useful, add the concrete technical
+detail (endpoint, method, required field) as a supporting clause, not as the whole sentence. Avoid
+unexplained jargon; if you use a technical term, briefly say what it means. Write in plain prose
+only — no markdown (no **, no backticks, no bullet points, no headers), since your output is shown
+as plain text with no formatting. Every factual claim must end with a citation marker in the exact
+form [doc:ID] using the doc_id given for that excerpt. If the excerpts do not contain the answer,
+say so plainly instead of guessing. Keep the whole answer to 2-3 sentences, no matter how many
+options exist — pick the most common case and mention alternatives exist rather than listing all
+of them."""
 
 
 def answer(query: str, retrieved: list[dict]) -> dict:
@@ -43,7 +50,7 @@ def answer(query: str, retrieved: list[dict]) -> dict:
     )
     response = client.messages.create(
         model=MODEL,
-        max_tokens=300,
+        max_tokens=400,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": f"Excerpts:\n\n{excerpts}\n\nQuestion: {query}"}],
     )
