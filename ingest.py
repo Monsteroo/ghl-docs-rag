@@ -33,8 +33,11 @@ def ingest(namespace: str = "production") -> int:
     texts = [f"{c['title']}\n\n{c['content']}" for c in chunks]
 
     bm25 = get_or_fit_bm25(corpus_texts=texts)
-    dense_vectors = embed_dense(texts)
     sparse_vectors = [bm25.encode_documents(t) for t in texts]
+
+    dense_vectors = []
+    for start in range(0, len(texts), BATCH_SIZE):
+        dense_vectors.extend(embed_dense(texts[start:start + BATCH_SIZE]))
 
     index = get_index()
     records = [
