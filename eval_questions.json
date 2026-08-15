@@ -1,0 +1,22 @@
+[
+  {"question": "How do I search contacts using advanced filters?", "expected_title_contains": "Search Contacts"},
+  {"question": "How do I find a duplicate contact by email or phone?", "expected_title_contains": "Duplicate Contact"},
+  {"question": "What does the Get Opportunity endpoint return?", "expected_title_contains": "Opportunity"},
+  {"question": "How do I create a calendar event?", "expected_title_contains": "Calendar"},
+  {"question": "How do I send a conversation message via the API?", "expected_title_contains": "Message"},
+  {"question": "How do I list payment transactions?", "expected_title_contains": "Payment"},
+  {"question": "How do I trigger a workflow via the API?", "expected_title_contains": "Workflow"},
+  {"question": "search-contacts-advanced", "expected_title_contains": "Search Contacts"},
+  {"question": "get-duplicate-contact", "expected_title_contains": "Duplicate Contact"},
+  {"question": "How do I use Webhook.site to debug my API requests?", "expected_title_contains": "Webhook.site"},
+  {"question": "How do I get started with the Developer Marketplace?", "expected_title_contains": "Developer's Marketplace"},
+  {"question": "How do I set pricing for my Marketplace app?", "expected_title_contains": "MarketplacApp Pricing"},
+  {"question": "How do I configure my Marketplace app's listing type?", "expected_title_contains": "Listing Type"},
+  {"question": "What are HighLevel's API security initiatives?", "expected_title_contains": "Security Initiatives"},
+  {"question": "How does the App Uninstall API work on the Marketplace?", "expected_title_contains": "Uninstall"},
+  {"question": "How does Agency App Reselling Config work?", "expected_title_contains": "Reselling"},
+  {"question": "How do I add an inbound message with a contact ID via the Conversations API?", "expected_title_contains": "Inbound Message"},
+  {"question": "webhook.site", "expected_title_contains": "Webhook.site"},
+  {"question": "What are the rate limits for API 1.0 and 2.0?", "expected_title_contains": "API Documentation"},
+  {"question": "marketplace app pricing", "expected_title_contains": "Pricing"}
+]
