@@ -1,2 +1,11 @@
 .worktrees/
 .superpowers/
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+*.log
+bm25_params.json
+corpus/api/*.md
+corpus/articles/*.md
